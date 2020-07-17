@@ -8,9 +8,12 @@
 
 import UIKit
 import CoreBluetooth
+import Charts
 
 let tacServiceCBUUID = CBUUID(string: "0xFFE0")
 let tacCharacteristicsCBUUID = CBUUID(string: "FFE1")
+
+let dataSet = [0, 0.0025, 0.0075, 0.025]
 
 extension ViewController: CBCentralManagerDelegate {
   func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -42,7 +45,8 @@ extension ViewController: CBCentralManagerDelegate {
 
 class ViewController: UIViewController {
     @IBOutlet weak var tacLabel: UILabel!
-  
+    @IBOutlet weak var chartView: LineChartView!
+    
     var centralManager: CBCentralManager!
     var tacPeripheral: CBPeripheral!
 
@@ -51,11 +55,31 @@ class ViewController: UIViewController {
     
         super.viewDidLoad()
         showText()
+        customizeChart(values: dataSet.map{ Double($0) })
+    }
+    
+    func customizeChart(values: [Double]) {
+        var dataEntries: [ChartDataEntry] = []
+        for i in 0..<values.count {
+            let dataEntry = ChartDataEntry(x: Double(i), y: values[i])
+            dataEntries.append(dataEntry)
+        }
+        
+        let lineChartDataSet = LineChartDataSet(entries: dataEntries, label: nil)
+        let lineChartData = LineChartData(dataSet: lineChartDataSet)
+        chartView.data = lineChartData
     }
     
     func onTACReceived(_ tac: Int) {
-        tacLabel.text = String(tac)
-        print("TAC: \(tac)")
+        var tacDouble = Double(tac)
+        tacDouble *= (0.0225/520)
+        var tacString = String(tacDouble)
+        if tacString.count >= 6 {
+            let range = tacString.index(tacString.startIndex, offsetBy: 6)..<tacString.endIndex
+            tacString.removeSubrange(range)
+        }
+        tacLabel.text = tacString
+        print("TAC: \(tacDouble)")
     }
     
     func showText() {
@@ -106,9 +130,6 @@ extension ViewController: CBPeripheralDelegate {
     guard let characteristicData = characteristic.value else { return -1 }
     let stringInt = String.init(data: characteristicData, encoding: String.Encoding.utf8)
     let tacInt = Int.init(stringInt ?? "") ?? 0
-    return tacInt
-    
-    //let firstBitValue = byteArray[0] & 0x01
-    
+    return tacInt    
   }
 }
