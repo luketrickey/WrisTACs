@@ -43,47 +43,47 @@ extension ViewController: CBCentralManagerDelegate {
 }
 
 
-class ViewController: UIViewController {
-    @IBOutlet weak var tacLabel: UILabel!
-    @IBOutlet weak var chartView: LineChartView!
+class ViewController: UIViewController { //ViewController for the "Live Data" screen.
+    @IBOutlet weak var tacLabel: UILabel! //Controls the UILabel that displays the users TAC in real time.
+    @IBOutlet weak var chartView: LineChartView! //Controls the line chart view.
     
     var centralManager: CBCentralManager!
     var tacPeripheral: CBPeripheral!
 
     override func viewDidLoad() {
-        centralManager = CBCentralManager(delegate: self, queue: nil)
+        centralManager = CBCentralManager(delegate: self, queue: nil) //Object used to discover and connect to peripheral devices; in this case, the HM-10 adapter connected to the Arduino.
     
         super.viewDidLoad()
-        showText()
-        customizeChart(values: dataSet.map{ Double($0) })
+        showText() //Calls showText function for this ViewController.
+        displayChart(values: dataSet.map{ Double($0) }) //Calls displayChart function using dataSet values as data entries.
     }
     
-    func customizeChart(values: [Double]) {
-        var dataEntries: [ChartDataEntry] = []
-        for i in 0..<values.count {
-            let dataEntry = ChartDataEntry(x: Double(i), y: values[i])
-            dataEntries.append(dataEntry)
+    func displayChart(values: [Double]) { //This function displays the chart to the user, allowing them to see the progression of their TAC of the collection period.
+        var dataEntries: [ChartDataEntry] = [] //Initializing dataEntries list to be populated in the following for loop.
+        for i in 0..<values.count { //for loop iterates through each value in the data set.
+            let dataEntry = ChartDataEntry(x: Double(i), y: values[i]) //Converting values from data set into chart data.
+            dataEntries.append(dataEntry) //Chart data is then used to populate dataEntries list.
         }
         
-        let lineChartDataSet = LineChartDataSet(entries: dataEntries, label: nil)
+        let lineChartDataSet = LineChartDataSet(entries: dataEntries, label: nil) //The next two lines are creating the data set out of entries in dataEntries list.
         let lineChartData = LineChartData(dataSet: lineChartDataSet)
-        chartView.data = lineChartData
+        chartView.data = lineChartData //Finally, chartView UIView is set equal to our chart data.
     }
     
-    func onTACReceived(_ tac: Int) {
-        var tacDouble = Double(tac)
-        tacDouble *= (0.0225/520)
-        var tacString = String(tacDouble)
-        if tacString.count >= 6 {
-            let range = tacString.index(tacString.startIndex, offsetBy: 6)..<tacString.endIndex
-            tacString.removeSubrange(range)
+    func onTACReceived(_ tac: Int) { //This function deals with converting and displaying the data being recieved from the HM-10 module.
+        var tacDouble = Double(tac) //Converting the data from HM-10 into Double.
+        tacDouble *= (0.0225/520) //Converting that Double to TAC level using our TAC algorithm developed in earlier testing.
+        var tacString = String(tacDouble) //Converting TAC level into a String that can be displayed to the user.
+        if tacString.count >= 6 { //This if statement mearly cuts off the end of the Double if it goes past 5 digits (0.xxx...) so that it can be fully displayed to the user.
+            let range = tacString.index(tacString.startIndex, offsetBy: 6)..<tacString.endIndex //Note that only the String is truncated, the Double remains as the full value.
+            tacString.removeSubrange(range) //Removing the end of the tacString.
         }
-        tacLabel.text = tacString
-        print("TAC: \(tacDouble)")
+        tacLabel.text = tacString //Displaying TAC string to the user with the tacLabel variable that is connected to a UILabel in the Storyboard.
+        //print("TAC: \(tacDouble)") //Line was used to output the TAC in the console for testing purposes, but does not need to be included in the final application.
     }
     
-    func showText() {
-        tacLabel.text = "--"
+    func showText() { //Function to be run when ViewController is initialized.
+        tacLabel.text = "--" //Dummy text to tell the user that the actual TAC reading will be displayed momentarily.
     }
 }
 
